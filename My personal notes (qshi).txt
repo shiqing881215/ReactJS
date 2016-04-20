@@ -1,0 +1,12 @@
+My personal notes (qshi) :
+
+This is the tutorial I follow tightly with 
+https://facebook.github.io/react/docs/tutorial.html
+to learn React.js
+
+Some notes : 
+1. Need to run a simple server to finish this tutorial, download everthing from 
+   https://github.com/reactjs/react-tutorial
+   Then in root directory of this repo, run "node server.js"
+   it will load the index.html under /public by default on port 3000
+2. index.html is the only file you need to touch
