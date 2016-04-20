@@ -10,3 +10,4 @@ Some notes :
    Then in root directory of this repo, run "node server.js"
    it will load the index.html under /public by default on port 3000
 2. index.html is the only file you need to touch
+3. Right now, since react-tutorial is also a git repo which is coming from the above fa   react offical link, so I just copy the index.html to this top directory. For all the   related detail info, please follow the office git hub link in (1)
