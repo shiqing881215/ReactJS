@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>React Tutorial</title>
+    <!-- Not present in the tutorial. Just for basic styling. -->
+    <link rel="stylesheet" href="css/base.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.6.15/browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    
+    <script type="text/babel">
+      // Mimic data
+      // var data = [
+      //   {id: 1, author: "Pete Hunt", text: "This is one comment"},
+      //   {id: 2, author: "Jordan Walke", text: "This is *another* comment"}
+      // ];
+
+      var CommentBox = React.createClass({
+        // This is called once during the component lifecycle to set the initial state
+        getInitialState : function() {
+          return {data: []};
+        },
+
+        // Use jQuery do the ajax call to the url to get the data
+        loadCommentsFromServer : function() {
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+              this.setState({data: data});   // Update the state to reflect data change
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+        },
+
+        // Called automatically by React after a component is rendered for the first time.
+        componentDidMount: function() {
+          this.loadCommentsFromServer();
+          setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+        },
+
+        // Deal with server should all happen here in the CommentBox
+        // Pass this handler down to the CommentForm
+        handleCommentSubmit : function(comment) {
+          debugger;
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            type: 'POST',
+            data: comment,
+            success: function(data) {
+              this.setState({data: data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+        },
+
+        // render() methods are written declaratively as functions of this.props and this.state. 
+        // props mostly for static value, state mostly for changing value
+        render : function() {
+          return (
+            // We can also use the native html here, but React api is better to read
+            // React.createElement('div', {className : "commentBox"}, 
+            //   "Hello, I'm a CommentBox")
+            <div className="commentBox">
+              <h1>Comments</h1>
+              <CommentList data={this.state.data} />
+              <CommentForm onCommentSubmit={this.handleCommentSubmit}/>
+            </div>
+          );
+        }
+      });
+
+      var CommentList = React.createClass({
+        render : function() {
+          // Render data in a list of <Comment>
+          var commentNodes = this.props.data.map(function(comment) {
+            return (
+              <Comment author={comment.author} key={comment.id}>
+                {comment.text}
+              </Comment>
+            );
+          });
+
+          return (
+            <div className="commentList">
+              {commentNodes}
+            </div>
+          );
+        }
+      });
+
+      var CommentForm = React.createClass({
+        getInitialState : function() {
+          return {author : '', text : ''};
+        },
+
+        handleAuthorChange : function(e) {
+          this.setState({author : e.target.value});
+        },
+
+        handleTextChange : function(e) {
+          this.setState({text : e.target.value});
+        },
+
+        handleSubmit : function(e) {
+          // prevent default browser form submitting behavior
+          e.preventDefault();
+          var author = this.state.author.trim();
+          var text = this.state.text.trim();
+          if (!author || !text) {
+            return;
+          }
+
+          // Send the request to the server - this real handler is pass down from CommentBox
+          this.props.onCommentSubmit({author : author, text : text});
+          this.setState({author : '', text : ''});
+        },
+
+        render : function() {
+          return (
+            <form className="commentForm" onSubmit={this.handleSubmit}>
+              <input type="text" 
+                     placeholder="Your name" 
+                     value={this.state.author}
+                     onChange={this.handleAuthorChange}/>
+              <input type="text" 
+                     placeholder="Say something..." 
+                     value={this.state.text}
+                     onChange={this.handleTextChange}/>
+              <input type="submit" value="Post" />
+            </form>
+          );
+        }
+      });
+
+      // Pass the data from CommentList and use this.props to render
+      // We access named attributes passed to the component as keys on this.props 
+      // and any nested elements as this.props.children.
+      // Here the marked is coming from "marked" library
+      var Comment = React.createClass({
+        rawMarkup: function() {
+          var rawMarkup = marked(this.props.children.toString(), {sanitize: true});
+          return { __html: rawMarkup };
+        },
+        render : function() {
+          return (
+            <div className="comment">
+              <h2 className="commentAuthor">
+                {this.props.author}
+              </h2>
+              <span dangerouslySetInnerHTML={this.rawMarkup()} />
+            </div>
+          );
+        }
+      });
+
+      // This should be called only after the composite component is defined
+      ReactDOM.render(
+        // <CommentBox data={data} />,     // This is how to pass the hard-code static data
+
+        // This REST api is already set up 
+        // Also we need to rerender the component when the data is ready from the server
+        <CommentBox url="/api/comments" />,
+        document.getElementById('content')
+      );
+    </script>
+  </body>
+</html>
